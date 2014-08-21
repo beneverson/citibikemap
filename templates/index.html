@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8 />
+<title>Heatmap from markers</title>
+<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+<script src='https://api.tiles.mapbox.com/mapbox.js/v2.0.1/mapbox.js'></script>
+<script src="{{ url_for('static', filename='jquery-2.1.1.min.js') }}"></script>
+<link href='https://api.tiles.mapbox.com/mapbox.js/v2.0.1/mapbox.css' rel='stylesheet' />
+<style>
+  body { margin:0; padding:0; }
+  #map { position:absolute; top:0; bottom:0; width:100%; }
+</style>
+</head>
+<body>
+<script src='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-heat/v0.1.0/leaflet-heat.js'></script>
+<div id='map'></div>
+
+<script>
+L.mapbox.accessToken = 'pk.eyJ1IjoiYmVuZXZlcnNvbiIsImEiOiI5NEZyMkxBIn0.keW7x9ghnVE_rOhxA4dYKw';
+var map = L.mapbox.map('map', 'beneverson.ja06dcjc').setView([40.7262, -73.962], 13), 
+	heat = L.heatLayer([], { radius: 25, max: 0.75, blur: 15}).addTo(map);
+	
+$.ajax({
+    url: '/get_stations',
+    type: 'POST',
+    cache: false,
+    data: {empty: 'empty'},
+    success: function(results) {
+      mrk = results.markers;
+      var _mrkrs = [];
+      for (i = 0; i < mrk.length; i++) {
+      	var _multiplier = Math.round(20 * mrk[i].properties.description);
+      	console.log(_multiplier);
+      	for (j = 0; j < _multiplier; j++) {
+      		_mrkrs.push(L.latLng(mrk[i].geometry.coordinates.reverse()));
+      	}
+      }
+      heat.setLatLngs(_mrkrs);
+    }
+});
+
+</script>
+</body>
+</html>
