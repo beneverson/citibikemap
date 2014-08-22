@@ -3,7 +3,6 @@
 # Inspired by citibike-rebalancing.herokuapp.com
 
 import requests
-import time
 
 STATIONS_ENDPOINT = 'http://citibikenyc.com/stations/json'
 
@@ -20,6 +19,3 @@ def get_stations():
                              _station['latitude'], _station['longitude']])
 
     return stations
-
-st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-print (st)
