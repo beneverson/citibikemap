@@ -13,36 +13,116 @@
 </style>
 </head>
 <body>
+<style>
+.legend label,
+.legend span {
+  display:block;
+  float:left;
+  height:15px;
+  width:20%;
+  text-align:center;
+  font-size:9px;
+  color:#808080;
+  }
+</style>
+
+<!-- Set the display of this container to none so we can
+     add it programmatically to `legendControl` -->
+<div id='legend' style='display:none;'>
+  <strong>The Title or Explanation of your Map</strong>
+  <nav class='legend clearfix'>
+    <span style='background:#F1EEF6;'></span>
+    <span style='background:#BDC9E1;'></span>
+    <span style='background:#74A9CF;'></span>
+    <span style='background:#2B8CBE;'></span>
+    <span style='background:#045A8D;'></span>
+    <label>0 - 20%</label>
+    <label>40%</label>
+    <label>60%</label>
+    <label>80%</label>
+    <label>100%</label>
+    <small>Source: <a href="#link to source">Name of source</a></small>
+</div>
+	
 <script src='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-heat/v0.1.0/leaflet-heat.js'></script>
 <div id='map'></div>
 
 <script>
 L.mapbox.accessToken = 'pk.eyJ1IjoiYmVuZXZlcnNvbiIsImEiOiI5NEZyMkxBIn0.keW7x9ghnVE_rOhxA4dYKw';
-var map = L.mapbox.map('map', 'beneverson.ja06dcjc').setView([40.7262, -73.962], 13), 
-	heat = L.heatLayer([], { radius: 25, max: 0.75, blur: 15}).addTo(map);
-	
+var map = L.mapbox.map('map', 'beneverson.ja06dcjc', {
+	fadeAnimation: false
+}).setView([40.7262, -73.962], 13);
+map.legendControl.addLegend(document.getElementById('legend').innerHTML);
+
+/*
 $.ajax({
     url: '/get_stations',
-    type: 'POST',
-    cache: false,
-    data: {empty: 'empty'},
+    type: 'GET',
     success: function(results) {
-      mrk = results.markers;
-      var _mrkrs = [];
-      for (i = 0; i < mrk.length; i++) {
-      	var _multiplier = Math.round(20 * mrk[i].properties.description);
-      	console.log(_multiplier);
-      	for (j = 0; j < _multiplier; j++) {
-      		_mrkrs.push(L.latLng(mrk[i].geometry.coordinates.reverse()));
-      	}
+	  var heat = L.heatLayer([], { radius: 25, max: 1.0, blur: 15})
+      _stations = results.stations;
+	  var current_stations = []; // array to hold our latLng objects
+	  // cycle through each station
+      for (i = 0; i < _stations.length; i++) {
+		  // add one point to the map for each free bike at the station
+		  for (j = 0; j < _stations[i].numbikes; j++){
+			  current_stations.push(L.latLng(_stations[i].latLng));
+		  }  
       }
-      heat.setLatLngs(_mrkrs);
+	  // set the data on the heatmap layer
+	  heat.setLatLngs(current_stations);
+	  // and add it to the map
+	  heat.addTo(map);
     }
 });
+*/
 
-// TODO: check out https://www.mapbox.com/mapbox.js/example/v1.0.0/cycle-overlays/ for how to animate layers on a map
-// make a flask script that returns X number of stations lists, create a heatLayer for each one, and use the above code to rapidly cycle through them. 
+$.ajax({
+    url: '/get_recent_history',
+    type: 'GET',
+    success: function(results) {
+		// loop through the results.historylist array
+		var hlist = results.historylist;
+		var layers = new Array();
+		for (k = 0; k < hlist.length; k++) {
+		  var heat = L.heatLayer([], { radius: 25, max: 1.0, blur: 10}) // declare a new heatmap layer
+		  _stations = hlist[k]; // retrieve the stations list
+		  var current_stations = []; // array to hold our latLng objects
+		  // cycle through each station
+		  for (i = 0; i < _stations.length; i++) {
+			  // add one point to the map for each free bike at the station
+			  for (j = 0; j < _stations[i].numbikes; j++){
+				  current_stations.push(L.latLng(_stations[i].latLng));
+			  }  
+		  }
+		  // set the data on the heatmap layer
+		  heat.setLatLngs(current_stations);
+		  // and add it to the 'layers' array
+		  layers.push(heat);
+		}
+		
+		// i is the number of the currently-selected layer: this loops through
+		// 0, 1, and 2.
+		var m = 0;
 
+		// we use a layer group to make it simple to remove an existing overlay
+		// and add a new one in the same line of code, as below, without juggling
+		// temporary variables.
+		var layerGroup = L.layerGroup().addTo(map);
+
+		// show the first overlay as soon as the map loads
+		next();
+
+		// and then time the next() function to run every 2 seconds
+		setInterval(next, 125);
+
+		function next() {
+		    layerGroup.clearLayers().addLayer(layers[m]);
+		    if (++m >= layers.length) m = 0;
+		}
+
+	}
+});
 
 </script>
 </body>
