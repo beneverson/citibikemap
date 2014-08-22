@@ -95,5 +95,5 @@ def write_stations(): # write the stations list to a csv file, and append the cu
     for item in _stations:
         _writer.writerow(item)
 
-# scrape the json data once every 5 minutes (300sec) for 3 days, starting 5sec from now
-run_periodically(time()+5, time()+(3*24*60*60), 300, write_stations)
+# scrape the json data once every 2.5 minutes (150sec) for 3 days, starting 5sec from now
+run_periodically(time()+5, time()+(3*24*60*60), 150, write_stations)
