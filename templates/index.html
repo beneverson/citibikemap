@@ -32,7 +32,9 @@ var map = L.mapbox.map('map', 'beneverson.ja06dcjc', {
 	fadeAnimation: false,
 	legendControl:{position:'topright'}
 }).setView([40.7262, -73.962], 13);
-if (!L.Browser.mobile) {
+if (L.Browser.mobile) {
+	map.locate({setView: true, maxZoom: 14});
+} else {
 	map.legendControl.addLegend(document.getElementById('legend').innerHTML);
 }
 $.ajax({
