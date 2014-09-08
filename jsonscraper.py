@@ -12,6 +12,14 @@ import tarfile
 from os import listdir, remove
 import re
 
+# set up the connection to Amazon S3
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+
+conn = S3Connection('AKIAIODRAEJMJBSEIAQQ','D5u6bwMWiWeziK23bzQLk1slAngi1MBt4E93r2sm')
+bucket = conn.get_bucket('citibike-archive')
+k = Key(bucket)
+
 STATIONS_ENDPOINT = 'http://citibikenyc.com/stations/json'
 DATAFILES_PATH = 'datafiles/'
 ARCHIVE_PATH = 'datafiles/archive/'
@@ -60,7 +68,8 @@ def archive_old_stations(to_keep=20, min_archive_size=100):
         _filedates.reverse() # make most recent dates first
         _filedates_keep = _filedates[:to_keep-1] # the keep list
         _filedates_archive = _filedates[to_keep:] # the archive list
-        archivename = ARCHIVE_PATH + strftime('%Y-%m-%d-%H_%M_%S') + '.tar.gz' # generate the archive name
+        _datestring = strftime('%Y-%m-%d-%H_%M_%S')
+        archivename = ARCHIVE_PATH + _datestring + '.tar.gz' # generate the archive name
         tar = tarfile.open(archivename, 'w:gz')
         for _fd in _filedates_archive:
             # generate the name
@@ -68,6 +77,9 @@ def archive_old_stations(to_keep=20, min_archive_size=100):
             #print 'Archiving ' + _filename
             tar.add(_filename)
         tar.close()
+        # send this file to s3
+        k.key = _datestring + '.tar.gz'
+        k.set_contents_from_filename(archivename)
         for _fd in _filedates_archive: # delete the original (uncompressed) files
             # generate the name
             _filename = DATAFILES_PATH + strftime('%Y-%m-%d %H_%M_%S', _fd) + '.csv'
